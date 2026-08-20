@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PlayScout Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">PS</div>
+      <div>
+        <div class="brand-name">PlayScout</div>
+        <div class="brand-sub">Automation</div>
+      </div>
+    </div>
+    <div class="nav-label">Modules</div>
+    <div class="nav-item active" id="navDiscovery"><span class="dot"></span>Test Discovery</div>
+    <div class="nav-item" id="navLibrary"><span class="dot" style="background:transparent;"></span>Library</div>
+    <div class="nav-item disabled">Test Execution<span class="soon">Soon</span></div>
+    <div class="nav-item disabled">Run History<span class="soon">Soon</span></div>
+    <div class="nav-item disabled">Settings<span class="soon">Soon</span></div>
+    <div class="sidebar-footer">v0.1 · discovery-only build</div>
+  </aside>
+
+  <main class="main">
+  <div id="discoveryView">
+    <div class="topbar">
+      <div>
+        <h1>Test Discovery</h1>
+        <p>Import a local folder or a GitHub repo, and PlayScout scans it for Playwright spec files, then plots every test case it finds below.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat-chip"><div class="num" id="statFiles">0</div><div class="lbl">Files Scanned</div></div>
+        <div class="stat-chip"><div class="num" id="statTests">0</div><div class="lbl">Tests Found</div></div>
+      </div>
+    </div>
+
+    <div class="overview-grid">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Run Health Over Time</h3>
+            <p>Trends from historical Execution runs</p>
+          </div>
+          <div class="toggle-group">
+            <div class="toggle-btn active" id="chartViewTrendBtn">Trend Area</div>
+            <div class="toggle-btn" id="chartViewStackedBtn">Stacked Bars</div>
+          </div>
+        </div>
+        <div id="trendChartArea">
+          <div class="chart-empty">
+            <svg viewBox="0 0 400 120" preserveAspectRatio="none">
+              <line x1="0" y1="100" x2="400" y2="100" stroke="#E1E3DE" stroke-width="1"/>
+              <line x1="0" y1="60" x2="400" y2="60" stroke="#E1E3DE" stroke-width="1" stroke-dasharray="3 4"/>
+              <line x1="0" y1="20" x2="400" y2="20" stroke="#E1E3DE" stroke-width="1" stroke-dasharray="3 4"/>
+            </svg>
+            <div class="msg">No run history yet. Import a folder or repo below and this chart will start plotting your Passed / Failed / Flaky / Expected Fail / Skipped counts — a new point gets saved each time you scan.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Repository Overview</h3>
+            <p>Live counts from your last scan</p>
+            <p id="lastUpdated" style="font-family:var(--font-mono); font-size:10px; color:var(--text-faint); margin-top:2px;"></p>
+          </div>
+        </div>
+        <div class="repo-stat-row">
+          <div class="repo-stat"><div class="lbl">Files Found</div><div class="num" id="ovFiles">0</div></div>
+          <div class="repo-stat"><div class="lbl">Scanned Test IDs</div><div class="num accent" id="ovTests">0</div></div>
+        </div>
+        <div class="section-h" style="margin-top:4px;">Scanned Sources</div>
+        <div id="sourcesList" class="sources-list"></div>
+        <div class="autosave-row">
+          <label class="autosave-check">
+            <input type="checkbox" id="autoSaveLibraryToggle">
+            <span>Auto-save every scan to Library</span>
+          </label>
+          <select class="filter" id="autoSaveFolderSelect" style="width:100%; margin-top:6px; display:none;"><option value="">Unfiled</option></select>
+        </div>
+        <div class="standards-box">
+          <div class="h">✓ Parsing Standards</div>
+          Specs are matched by <code>test()</code> blocks — add an ID tag like <code>@id-INSTALLERS-001</code>, a title prefix like <code>[TR-001] [Priority: High] [Status: Passed]</code>, or a <code>test.info().annotations.push(...)</code> call, and wrap steps in <code>test.step()</code> (falls back to <code>//</code> comments if none exist). JSON accepts hand-written manifests (<code>tests</code>/<code>cases</code> array), Playwright's own <code>--reporter=json</code> output, and Mocha's JSON reporter — all auto-detected. <code>.xml</code> files are read as JUnit reports (pass/fail/skip pulled from <code>&lt;failure&gt;</code>/<code>&lt;error&gt;</code>/<code>&lt;skipped&gt;</code>). <code>.jsonl</code> (or a <code>--reporter=blob</code> <code>.zip</code>, extracted automatically) is read as Playwright's blob event log — the same <code>@id</code>/priority/requirement annotations carry through. Plain <code>.txt</code> files use a title line followed by numbered steps. Anything else — CSV, HTML exports, messy logs — use <strong>Smart Import (AI)</strong> instead of a fixed convention.
+        </div>
+      </div>
+    </div>
+
+    <div class="status-row" id="statusRow"></div>
+
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab-btn active" data-tab="local">Local Folder</div>
+        <div class="tab-btn" data-tab="repo">GitHub Repo</div>
+        <div class="tab-btn" data-tab="smart">Smart Import (AI)</div>
+      </div>
+      <div class="tab-body">
+        <div class="tab-pane active" id="pane-local">
+          <div class="dropzone" id="dropzone">
+            <div class="icon">[ ↓ ]</div>
+            <div class="main-txt">Click to choose a folder, or drag files/folders here</div>
+            <div class="sub-txt">PlayScout scans every subfolder automatically for **/*.spec.ts, *.test.ts, *.spec.js, *.test.js, .json (including Playwright's own JSON reporter output), .xml (JUnit reports), .txt test outlines, .zip archives (CI "download all artifacts" bundles, and Playwright's own --reporter=blob output), and .jsonl (blob reports' extracted report.jsonl) — node_modules, .git, dist, build, and similar folders are skipped automatically</div>
+            <div class="sub-txt" style="margin-top:8px;">Got several separate report files instead of one folder? <button class="action-link" id="chooseFilesLink" style="font-size:11.5px;">Choose multiple files</button> — they'll all scan together in one batch.</div>
+          </div>
+          <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+          <input type="file" id="looseFilesInput" multiple accept=".ts,.tsx,.js,.jsx,.json,.jsonl,.xml,.txt,.zip" style="display:none">
+          <div class="smart-progress" id="localProgress" style="display:none;">
+            <span id="localProgressText">Working...</span>
+            <button class="btn btn-ghost" id="localCancelBtn">Cancel</button>
+          </div>
+        </div>
+        <div class="tab-pane" id="pane-repo">
+          <div class="repo-row">
+            <div class="field">
+              <label>Repository</label>
+              <input type="text" id="repoOwner" placeholder="owner/repo e.g. playscout/portal-playwright">
+            </div>
+            <div class="field">
+              <label>Branch</label>
+              <input type="text" id="repoBranch" placeholder="main" style="min-width:110px;">
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" id="scanRepoBtn">Scan Repo</button>
+            </div>
+          </div>
+          <div class="field" style="margin-top:10px; max-width:420px;">
+            <label>Personal Access Token <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(optional — required for private repos)</span></label>
+            <input type="password" id="repoToken" placeholder="ghp_... or github_pat_..." autocomplete="off">
+          </div>
+          <div class="sub-txt" style="margin-top:10px;">Without a token: public repos only, via the GitHub API. With a token: private repos work too, fetched through GitHub's Git Blob API. The token is only ever sent directly to api.github.com — it's never saved to storage and is cleared when you reload the page.</div>
+          <div class="smart-progress" id="repoProgress" style="display:none;">
+            <span id="repoProgressText">Working...</span>
+            <button class="btn btn-ghost" id="repoCancelBtn">Cancel</button>
+          </div>
+        </div>
+        <div class="tab-pane" id="pane-smart">
+          <div class="dropzone" id="smartDropzone">
+            <div class="icon">[ ✦ ]</div>
+            <div class="main-txt">Click to choose a file, or drag one here</div>
+            <div class="sub-txt">Reads test reports in almost any format — CSV, JUnit/XML, Markdown, HTML exports, plain logs, messy notes — and uses Claude to detect titles, steps, priority, and status.</div>
+          </div>
+          <input type="file" id="smartFileInput" multiple style="display:none">
+          <div class="sub-txt" style="margin-top:10px;">File contents are sent to the Claude API to be parsed. Large files are split into chunks automatically — you'll see how many before anything is sent.</div>
+          <div class="smart-progress" id="smartProgress" style="display:none;">
+            <span id="smartProgressText">Working...</span>
+            <button class="btn btn-ghost" id="smartCancelBtn">Cancel</button>
+          </div>
+        </div>
+        <div class="scanlog" id="scanLog"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <span style="color:var(--text-faint); font-family:var(--font-mono);">⌕</span>
+        <input type="text" id="searchInput" placeholder="Search title, ID, file, steps, requirement...">
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <select class="filter" id="priorityFilter">
+          <option value="all">All priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select class="filter" id="statusFilter">
+          <option value="all">All statuses</option>
+          <option value="Passed">Passed</option>
+          <option value="Failed">Failed</option>
+          <option value="Flaky">Flaky</option>
+          <option value="Expected Fail">Expected Fail</option>
+          <option value="Skipped">Skipped</option>
+          <option value="Unrun">Unrun</option>
+        </select>
+        <button class="btn btn-ghost" id="groupToggleBtn" title="Group rows by test suite">Group by Suite</button>
+        <button class="btn btn-ghost" id="dupOnlyBtn" title="Show only rows with a duplicate ID">⚠ Dups Only</button>
+        <button class="btn btn-ghost" id="editedOnlyBtn" title="Show only manually overridden rows">✎ Edited Only</button>
+        <button class="btn btn-ghost" id="exportJsonBtn" title="Download the currently filtered rows as JSON">Export JSON</button>
+        <button class="btn btn-ghost" id="exportCsvBtn" title="Download the currently filtered rows as CSV">Export CSV</button>
+        <button class="btn btn-ghost" id="saveAllToLibraryBtn" title="Save the currently visible rows to the Library">💾 Save All to Library</button>
+        <span class="results-count" id="resultsCount">0 test cases</span>
+        <button class="btn btn-ghost" id="clearAllBtn" title="Clear all discovered tests and run history saved in this browser">Clear All</button>
+      </div>
+    </div>
+
+    <div id="tableWrap">
+      <div class="empty-state">
+        <div class="glyph">// </div>
+        <div class="title">No tests discovered yet</div>
+        <div class="sub">Import a local folder or scan a GitHub repo above to find and plot your Playwright test cases.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="libraryView" style="display:none;">
+    <div class="topbar">
+      <div>
+        <h1>Library</h1>
+        <p>Save, organize, and edit test cases into folders — a curated space independent of live scan results. Nothing here changes when you re-scan.</p>
+      </div>
+    </div>
+
+    <div class="library-layout">
+      <aside class="library-sidebar">
+        <div class="library-sidebar-head">
+          <span>Folders</span>
+          <button class="btn btn-ghost" id="newFolderBtn" title="Create a new folder">+ Folder</button>
+        </div>
+        <div id="newFolderRow" class="new-folder-row" style="display:none;">
+          <input type="text" id="newFolderInput" placeholder="Folder name" maxlength="60">
+          <button class="action-link" id="newFolderConfirm">Add</button>
+        </div>
+        <div class="folder-list" id="folderList"></div>
+      </aside>
+      <section class="library-content">
+        <div class="toolbar">
+          <div class="search-box">
+            <span style="color:var(--text-faint); font-family:var(--font-mono);">⌕</span>
+            <input type="text" id="librarySearch" placeholder="Search library...">
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-ghost" id="exportLibraryJsonBtn" title="Download the currently visible library items as JSON">Export JSON</button>
+            <button class="btn btn-ghost" id="exportLibraryCsvBtn" title="Download the currently visible library items as CSV">Export CSV</button>
+            <span class="results-count" id="libraryResultsCount">0 items</span>
+            <button class="btn btn-primary" id="newLibraryItemBtn">+ New Test Case</button>
+          </div>
+        </div>
+        <div id="libraryTableWrap"></div>
+      </section>
+    </div>
+  </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="overlay" id="confirmOverlay"></div>
+<div class="confirm-modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmMessage">
+  <div class="confirm-body" id="confirmMessage">Are you sure?</div>
+  <div class="confirm-actions">
+    <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+    <button class="btn btn-primary" id="confirmOkBtn">Confirm</button>
+  </div>
+</div>
+
+<div class="overlay" id="libraryFormOverlay"></div>
+<div class="library-form-modal" id="libraryFormModal" role="dialog" aria-modal="true" aria-labelledby="libraryFormTitle">
+  <div class="drawer-head">
+    <div><h2 id="libraryFormTitle">New Test Case</h2></div>
+    <button class="drawer-close" id="libraryFormClose" aria-label="Close">✕</button>
+  </div>
+  <div class="library-form-body">
+    <div class="field" style="margin-bottom:14px;">
+      <label>Title</label>
+      <input type="text" id="lfTitle" placeholder="Test title">
+    </div>
+    <div class="meta-grid" style="margin-bottom:14px;">
+      <div class="meta-item">
+        <div class="k">ID <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(optional)</span></div>
+        <input type="text" id="lfId" placeholder="Auto-generated if blank" style="width:100%; font-family:var(--font-mono); font-size:12.5px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--paper);">
+      </div>
+      <div class="meta-item">
+        <div class="k">Folder</div>
+        <select class="filter" id="lfFolder" style="width:100%;"><option value="">Unfiled</option></select>
+      </div>
+      <div class="meta-item">
+        <div class="k">Priority</div>
+        <select class="filter" id="lfPriority" style="width:100%;">
+          <option value="High">High</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div class="meta-item">
+        <div class="k">Status</div>
+        <select class="filter" id="lfStatus" style="width:100%;">
+          <option value="Unrun" selected>Unrun</option>
+          <option value="Passed">Passed</option>
+          <option value="Failed">Failed</option>
+          <option value="Flaky">Flaky</option>
+          <option value="Expected Fail">Expected Fail</option>
+          <option value="Skipped">Skipped</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Steps <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(one per line)</span></label>
+      <textarea id="lfSteps" rows="5" placeholder="Step one&#10;Step two"></textarea>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Requirement <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(optional)</span></label>
+      <textarea id="lfRequirement" rows="2" placeholder="What this test verifies"></textarea>
+    </div>
+    <div class="field">
+      <label>Tags <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(comma-separated, optional)</span></label>
+      <input type="text" id="lfTags" placeholder="@smoke, @regression">
+    </div>
+  </div>
+  <div class="library-form-actions">
+    <button class="btn btn-ghost" id="lfCancelBtn">Cancel</button>
+    <button class="btn btn-primary" id="lfSaveBtn">Save</button>
+  </div>
+</div>
+
+<div class="overlay" id="saveToLibraryOverlay"></div>
+<div class="confirm-modal" id="saveToLibraryModal" role="dialog" aria-modal="true" aria-labelledby="saveToLibraryMessage">
+  <div class="confirm-body" id="saveToLibraryMessage">Save to Library</div>
+  <div class="field" style="margin-bottom:18px;">
+    <label>Folder</label>
+    <select class="filter" id="saveToLibraryFolderSelect" style="width:100%;"><option value="">Unfiled</option></select>
+  </div>
+  <div class="confirm-actions">
+    <button class="btn btn-ghost" id="saveToLibraryCancelBtn">Cancel</button>
+    <button class="btn btn-primary" id="saveToLibraryConfirmBtn">Save</button>
+  </div>
+</div>
+
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+  <div class="drawer-head">
+    <div>
+      <h2 id="drawerTitle">—</h2>
+      <span class="suite-tag" id="drawerSuite">—</span>
+    </div>
+    <button class="drawer-close" id="drawerClose" aria-label="Close details panel">✕</button>
+  </div>
+  <div class="drawer-body">
+    <button class="btn btn-ghost" id="drawerSaveToLibrary" style="width:100%; margin-bottom:16px; justify-content:center;">💾 Save to Library</button>
+    <div class="section-h">Metadata</div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="k">ID</div><div class="v" id="drawerId">—</div></div>
+      <div class="meta-item">
+        <div class="k">Priority <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(editable)</span></div>
+        <select class="filter" id="drawerPriority" style="width:100%;">
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div class="meta-item">
+        <div class="k">Status <span style="text-transform:none; font-weight:400; color:var(--text-faint);">(editable)</span></div>
+        <select class="filter" id="drawerStatus" style="width:100%;">
+          <option value="Passed">Passed</option>
+          <option value="Failed">Failed</option>
+          <option value="Flaky">Flaky</option>
+          <option value="Expected Fail">Expected Fail</option>
+          <option value="Skipped">Skipped</option>
+          <option value="Unrun">Unrun</option>
+        </select>
+      </div>
+      <div class="meta-item"><div class="k">Modifier</div><div class="v" id="drawerModifier">—</div></div>
+      <div class="meta-item" style="grid-column:1/-1;"><div class="k">Source File</div><div class="v" id="drawerFile">—</div></div>
+    </div>
+    <div id="drawerOverrideNote" style="display:none; font-size:11px; color:var(--text-muted); margin:-10px 0 16px;">
+      ✎ Manually overridden — <button class="action-link" id="drawerResetOverride" style="font-size:11px;">reset to detected values</button>
+    </div>
+    <div class="section-h" id="drawerReqHeader" style="display:none;">Requirement</div>
+    <div class="standards-box" id="drawerRequirement" style="display:none; margin-bottom:20px;"></div>
+    <div class="section-h" id="drawerTimingHeader" style="display:none;">Timing</div>
+    <div class="meta-grid" id="drawerTimingGrid" style="display:none;">
+      <div class="meta-item"><div class="k">Started</div><div class="v" id="drawerStarted">—</div></div>
+      <div class="meta-item"><div class="k">Ended</div><div class="v" id="drawerEnded">—</div></div>
+      <div class="meta-item" style="grid-column:1/-1;"><div class="k">Duration</div><div class="v" id="drawerDuration">—</div></div>
+    </div>
+    <div class="section-h">Tags</div>
+    <div class="tag-row" id="drawerTags"></div>
+    <div class="section-h">Steps</div>
+    <ol class="step-list" id="drawerSteps"></ol>
+    <div class="section-h">Raw Match</div>
+    <div class="raw-box" id="drawerRaw">—</div>
+  </div>
+</div>
+    <script src="app.js"></script>
+</body>
+</html>
