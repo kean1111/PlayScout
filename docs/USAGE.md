@@ -58,3 +58,10 @@ The following modules are marked as **"Soon"** in the sidebar and are currently 
 * **Test Execution:** Triggering live test runs directly from the desktop interface.
 * **Run History:** Dedicated logs for past execution runs.
 * **Settings:** Custom application configurations.
+
+## REFERENCE
+<img width="1919" height="1041" alt="image" src="https://github.com/user-attachments/assets/c0072674-9deb-4656-b394-2f175140291f" />
+
+<img width="1919" height="1039" alt="image" src="https://github.com/user-attachments/assets/e6e0fcc8-2902-44fb-a641-e7802a043682" />
+
+
