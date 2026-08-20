@@ -16,7 +16,8 @@ Automated scanning of folders or repositories to identify test spec files, plot 
 
 ### 2. Multi-Source Import
 A powerful import engine designed for flexibility and complex test environments.
-* **Local Folder:** Point PlayScout at any directory or drag-and-drop multiple folders/files (e.g., specific \eport.json\ files) for immediate analysis.
+* **Local Folder:** Point PlayScout at any directory or drag-and-drop multiple folders/files (e.g., specific \
+eport.json\ files) for immediate analysis.
 * **GitHub Repo (Coming Soon):** Seamlessly scan remote repositories.
 * **Smart Import (AI):** Advanced parsing for non-standard formats, legacy reports, or unconventional test structures.
 
@@ -43,22 +44,9 @@ PlayScout is continuously evolving. Planned future modules include:
 * **Data Processing:** Python (\extract.py\ for parsing tasks)
 
 ---
+## Reference Image
+<img width="1911" height="1035" alt="image" src="https://github.com/user-attachments/assets/2e382d84-dd3e-40a3-a0cf-76d4ce77e8a3" />
 
-## Getting Started
-
-### 1. Clone and Install
-\\\ash
-git clone https://github.com/kean1111/PlayScout.git
-cd PlayScout
-npm install
-\\\
-
-### 2. Run the Application
-\\\ash
-npm start
-\\\
-
----
 
 ## License
 
